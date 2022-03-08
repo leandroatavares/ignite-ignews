@@ -1,4 +1,4 @@
-import { GetServerSideProps } from 'next'
+import { GetServerSideProps, GetStaticProps } from 'next'
 import Head from 'next/head'
 import { SubscribeButton } from '../components/SubscribeButton'
 import { stripe } from '../services/stripe'
@@ -7,7 +7,7 @@ import styles from './home.module.scss'
 
 type HomeProps = {
   product: {
-    productId: string;
+    priceId: string;
     amount: number
   }
 }
@@ -30,7 +30,7 @@ export default function Home({ product }: HomeProps) {
             Get access to all the publications <br />
             for <span>{product.amount}</span> month
           </p>
-          <SubscribeButton />
+          <SubscribeButton priceId={product.priceId} />
         </section>
 
         <img src="/images/avatar.svg" alt="girl coding" />
@@ -41,10 +41,8 @@ export default function Home({ product }: HomeProps) {
 
 //so funciona em páginas /pages SSR next
 //Executado no server-side
-export const getServerSideProps: GetServerSideProps = async () => {
-  const price = await stripe.prices.retrieve('price_1KaqidBkdgTkLICCbPRRKzom', {
-    expand: ['product']
-  })
+export const getStaticProps: GetStaticProps = async () => {
+  const price = await stripe.prices.retrieve('price_1KaqidBkdgTkLICCbPRRKzom')
   const product = {
     priceId: price.id,
     amount: new Intl.NumberFormat('en-US', {
@@ -53,6 +51,9 @@ export const getServerSideProps: GetServerSideProps = async () => {
     }).format(price.unit_amount / 100)
   }
   return {
-    props: { product }
+    props: {
+      product
+    },
+    revalidate: 60 * 60 * 24, //24 horas
   }
 }
