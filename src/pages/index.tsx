@@ -18,13 +18,13 @@ export default function Home() {
           </h1>
           <p>
             Get access to all the publications <br />
-            <span>for $9.90 month</span>
+            for <span>$9.90</span> month
           </p>
           <SubscribeButton />
         </section>
 
         <img src="/images/avatar.svg" alt="girl coding" />
       </main>
-    </> 
+    </>
   )
 }
