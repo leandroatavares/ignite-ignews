@@ -40,12 +40,14 @@ export default NextAuth({
               }
             ),
             q.Update(
-              q.Select("ref", q.Get(
-                q.Match(
-                  q.Index('user_by_email'),
-                  q.Casefold(user.email)
+              q.Select("ref",
+                q.Get(
+                  q.Match(
+                    q.Index('user_by_email'),
+                    q.Casefold(user.email)
+                  )
                 )
-              )),
+              ),
               {
                 data: {
                   lastLogin: Date.now()
