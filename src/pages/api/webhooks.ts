@@ -24,7 +24,9 @@ export const config = {
 
 //eventos relevantes do webhook
 const relevantEvents = new Set([
-  'checkout.session.completed'
+  'checkout.session.completed',
+  'customer.subscription.updated',
+  'customer.subscription.deleted',
 ])
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
@@ -42,14 +44,26 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     const { type } = event; // == const type = event.type;
     if(relevantEvents.has(type)) {
       try {
+        console.log(type);
         switch(type) {
           case 'checkout.session.completed':
-          const checkSession = event.data.object as Stripe.Checkout.Session;
-          await saveSubscription(
-            checkSession.subscription.toString(),
-            checkSession.customer.toString()
-          )
-          break;
+            const checkSession = event.data.object as Stripe.Checkout.Session;
+            await saveSubscription(
+              checkSession.subscription.toString(),
+              checkSession.customer.toString(),
+              true
+            )
+            break;
+          case 'customer.subscription.updated':
+          case 'customer.subscription.deleted':
+            const subscription = event.data.object as Stripe.Subscription;
+
+            await saveSubscription(
+              subscription.id.toString(),
+              subscription.customer.toString(),
+              false //type === 'customer.subscription.created'
+            );
+
           default:
             throw new Error('Unhundled event.')
         }

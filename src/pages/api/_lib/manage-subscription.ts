@@ -1,10 +1,11 @@
-import { fauna } from "../../../services/fauna";
 import { query as q } from 'faunadb';
+import { fauna } from "../../../services/fauna";
 import { stripe } from "../../../services/stripe";
 
 export async function saveSubscription(
   subscriptionId: string,
-  customerId: string
+  customerId: string,
+  createAction = false,
 ) {  
   //Busca o user no faunadb pelo customerId (stripeCustomerId) index: user_by_stripe_customer_id
   const useRef = await fauna.query(
@@ -27,12 +28,31 @@ export async function saveSubscription(
     priceId: subscription.items.data[0].price.id
   }
 
-  // Salva dados da subscription no faunadb
-  await fauna.query(
-    q.Create(
-      q.Collection('subscriptions'),
-      { data: { subscriptionData } }
+  if(createAction) {
+    // Salva dados da subscription no faunadb
+    await fauna.query(
+      q.Create(
+        q.Collection('subscriptions'),
+        { data: { ...subscriptionData } }
+      )
     )
-  )
+  } else {
+    console.log('subscriptionData: ', subscriptionData);
+    
+    await fauna.query(
+      q.Replace(
+        q.Select(
+          "ref",
+          q.Get(
+            q.Match(
+              q.Index('subscription_by_id'),
+              subscriptionId
+            )
+          )
+        ), 
+        { data: subscriptionData }
+      )
+    )
+  }
 
 }
