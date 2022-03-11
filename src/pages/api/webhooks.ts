@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Readable } from 'stream';
 import Stripe from "stripe";
 import { stripe } from "../../services/stripe";
+import { saveSubscription } from "./_lib/manage-subscription";
 
 async function buffer(readable: Readable) {
   const chunks = [];
@@ -40,7 +41,22 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
     const { type } = event; // == const type = event.type;
     if(relevantEvents.has(type)) {
-      console.log('event: ', event);
+      try {
+        switch(type) {
+          case 'checkout.session.completed':
+          const checkSession = event.data.object as Stripe.Checkout.Session;
+          await saveSubscription(
+            checkSession.subscription.toString(),
+            checkSession.customer.toString()
+          )
+          break;
+          default:
+            throw new Error('Unhundled event.')
+        }
+      } catch(err) {
+        //TODO -> estudar sentry, bugsnag
+        return res.json({ error: 'Webhook handler failed.' })
+      }
     }
     
     res.json({received: true})
